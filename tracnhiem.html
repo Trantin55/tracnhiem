@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trắc nghiệm CNXH Khoa học</title>
+<style>
+:root{--primary:#4e73df;--success:#1cc88a;--danger:#e74a3b;--warning:#f6c23e;--dark:#1a1a2e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px}
+.screen{background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.4);display:none;animation:fadeIn .4s ease}
+.screen.active{display:block}
+#startScreen{padding:40px;max-width:500px;width:100%;text-align:center}
+#quizScreen{padding:28px;max-width:700px;width:100%}
+#resultScreen{padding:35px 30px;max-width:600px;width:100%;text-align:center}
+#reviewScreen{padding:25px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto}
+
+/* START */
+.start-icon{font-size:60px;margin-bottom:15px}
+h1{font-size:22px;color:var(--dark);margin-bottom:8px}
+.desc{color:#666;margin-bottom:20px;font-size:14px;line-height:1.6}
+.start-stats{display:flex;justify-content:center;gap:20px;margin-bottom:25px}
+.stat-box{background:#f0f4ff;border-radius:12px;padding:12px 20px;text-align:center}
+.stat-box .num{font-size:26px;font-weight:700;color:var(--primary)}
+.stat-box .lbl{font-size:12px;color:#888}
+.mode-label{font-weight:600;color:#333;margin-bottom:10px;text-align:left;font-size:13px}
+.mode-select{display:flex;gap:10px;margin-bottom:20px}
+.mode-btn{flex:1;padding:12px;border:2px solid #e0e0e0;border-radius:12px;background:#fff;cursor:pointer;font-size:13px;color:#555;transition:all .2s}
+.mode-btn.active{border-color:var(--primary);background:#f0f4ff;color:var(--primary);font-weight:700}
+.mode-btn .mi{font-size:20px;display:block;margin-bottom:4px}
+
+/* QUIZ HEADER */
+.quiz-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px;flex-wrap:wrap}
+.score-badge{background:linear-gradient(135deg,var(--primary),#6f8de8);color:#fff;padding:6px 14px;border-radius:20px;font-size:14px;font-weight:600}
+.elapsed-badge{background:#f0f4ff;color:var(--primary);padding:6px 14px;border-radius:20px;font-size:14px;font-weight:600}
+
+/* PROGRESS */
+.prog-info{display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:6px}
+.prog-bg{background:#e9ecef;border-radius:10px;height:8px;overflow:hidden;margin-bottom:18px}
+.prog-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--primary),var(--success));transition:width .4s ease}
+
+/* QUESTION */
+.qbox{background:linear-gradient(135deg,#f8f9ff,#f0f4ff);border-left:4px solid var(--primary);border-radius:12px;padding:18px 20px;margin-bottom:16px;font-size:15px;font-weight:600;color:var(--dark);line-height:1.6}
+
+/* TIMER ROW */
+.timer-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.start-timer-btn{padding:8px 18px;border:none;border-radius:10px;background:var(--warning);color:#333;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.start-timer-btn:hover{opacity:.88;transform:translateY(-1px)}
+.start-timer-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.timer-bar-wrap{flex:1;min-width:120px}
+.timer-bar-label{display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:3px}
+.timer-bar-bg{background:#e9ecef;border-radius:10px;height:9px;overflow:hidden}
+.timer-bar-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--success),var(--primary));transition:width 1s linear}
+.timer-bar-fill.red{background:linear-gradient(90deg,#ff6b6b,var(--danger))}
+.timer-info{font-size:13px;font-weight:700;min-width:30px;color:var(--primary)}
+.timer-info.red{color:var(--danger)}
+.timer-done-badge{background:#e8faf3;color:var(--success);border-radius:20px;padding:5px 12px;font-size:13px;font-weight:700;display:none}
+
+/* ANSWERS */
+.agrid{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.abtn{width:100%;padding:13px 16px;border:2px solid #e8e8e8;border-radius:12px;background:#fff;cursor:pointer;text-align:left;font-size:14px;color:#333;transition:all .25s;display:flex;align-items:center;gap:12px;line-height:1.4}
+.abtn:hover:not(:disabled){border-color:var(--primary);background:#f0f4ff;transform:translateX(4px)}
+.albl{min-width:28px;height:28px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;transition:all .25s}
+.abtn:hover:not(:disabled) .albl{background:var(--primary);color:#fff}
+.abtn.correct{border-color:var(--success)!important;background:#e8faf3!important;color:#155724!important}
+.abtn.correct .albl{background:var(--success)!important;color:#fff!important}
+.abtn.wrong{border-color:var(--danger)!important;background:#fde8e8!important;color:#721c24!important;animation:shake .4s}
+.abtn.wrong .albl{background:var(--danger)!important;color:#fff!important}
+
+/* FEEDBACK */
+.feedback{padding:11px 15px;border-radius:10px;font-size:14px;font-weight:600;display:none;margin-bottom:10px}
+.feedback.ok{background:#e8faf3;color:#155724;display:block}
+.feedback.bad{background:#fde8e8;color:#721c24;display:block}
+
+.action-row{display:none;justify-content:flex-end}
+.btn{padding:10px 24px;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{opacity:.88;transform:translateY(-1px)}
+.btn-p{background:var(--primary);color:#fff}
+.btn-w{background:var(--warning);color:#333}
+.btn-o{background:#fff;color:var(--primary);border:2px solid var(--primary)}
+
+/* RESULT */
+.r-icon{font-size:60px;display:block;margin-bottom:10px;animation:bounce .6s}
+.r-title{font-size:24px;font-weight:700;color:var(--dark);margin-bottom:5px}
+.r-sub{color:#888;margin-bottom:20px;font-size:14px}
+.r-score{font-size:56px;font-weight:800;background:linear-gradient(135deg,var(--primary),var(--success));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.r-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}
+.r-card{background:#f8f9fa;border-radius:12px;padding:14px 10px;text-align:center}
+.r-card .n{font-size:22px;font-weight:700}
+.r-card .l{font-size:11px;color:#888;margin-top:3px}
+.r-card.g .n{color:var(--success)}.r-card.r .n{color:var(--danger)}.r-card.b .n{color:var(--primary)}
+.stars{font-size:28px;margin:8px 0 20px}
+.r-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* REVIEW */
+.rv-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;position:sticky;top:0;background:#fff;padding:5px 0 15px;border-bottom:1px solid #eee;z-index:1}
+.rv-item{margin-bottom:16px;border:1px solid #eee;border-radius:12px;padding:15px}
+.rv-item.ok2{border-left:4px solid var(--success)}.rv-item.bad2{border-left:4px solid var(--danger)}
+.rv-q{font-size:14px;font-weight:600;color:var(--dark);margin-bottom:10px;line-height:1.5}
+.rv-ans{display:flex;flex-direction:column;gap:5px}
+.ra{font-size:13px;padding:7px 12px;border-radius:8px;color:#555}
+.ra.good{background:#e8faf3;color:#155724;font-weight:600}
+.ra.miss{background:#fde8e8;color:#721c24}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
+@keyframes bounce{0%{transform:scale(0)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@media(max-width:520px){.mode-select{flex-direction:column}#quizScreen,#startScreen{padding:18px}.timer-row{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+
+<!-- ===== START ===== -->
+<div id="startScreen" class="screen active">
+  <div class="start-icon">📚</div>
+  <h1>Trắc nghiệm CNXH Khoa học</h1>
+  <p class="desc">Ôn tập cơ cấu xã hội – giai cấp và liên minh giai cấp trong thời kỳ quá độ lên chủ nghĩa xã hội</p>
+  <div class="start-stats">
+    <div class="stat-box"><div class="num">50</div><div class="lbl">Câu hỏi</div></div>
+    <div class="stat-box"><div class="num" id="bestDisp">--</div><div class="lbl">🏆 Cao nhất</div></div>
+  </div>
+  <p class="mode-label">⚙️ Chọn chế độ chơi:</p>
+  <div class="mode-select">
+    <button class="mode-btn active" id="modeAll" onclick="setMode('all')"><span class="mi">📋</span>Tất cả 50 câu</button>
+    <button class="mode-btn" id="modeRandom" onclick="setMode('random')"><span class="mi">🔀</span>20 câu ngẫu nhiên</button>
+  </div>
+  <button class="btn btn-p" style="width:100%;justify-content:center;padding:14px;font-size:16px" onclick="startQuiz()">🚀 Bắt đầu làm bài</button>
+</div>
+
+<!-- ===== QUIZ ===== -->
+<div id="quizScreen" class="screen">
+  <div class="quiz-header">
+    <div class="score-badge">🏆 <span id="scoreDisp">0</span> điểm</div>
+    <div class="elapsed-badge">🕐 <span id="elapsedDisp">00:00</span></div>
+  </div>
+
+  <div class="prog-info">
+    <span id="progText">Câu 1/50</span>
+    <span id="streakText" style="color:#e74a3b;font-weight:700"></span>
+  </div>
+  <div class="prog-bg"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+
+  <div class="qbox" id="qText"></div>
+
+  <!-- Timer row: nút bắt đầu + thanh đếm -->
+  <div class="timer-row">
+    <button class="start-timer-btn" id="startTimerBtn" onclick="startTimer()">⏱️ Bắt đầu đếm giờ</button>
+    <div class="timer-bar-wrap" id="timerBarWrap" style="display:none">
+      <div class="timer-bar-label">
+        <span>Thời gian còn lại</span>
+        <span id="timerNum" class="timer-info">10s</span>
+      </div>
+      <div class="timer-bar-bg"><div class="timer-bar-fill" id="timerBarFill" style="width:100%"></div></div>
+    </div>
+    <div class="timer-done-badge" id="timerDoneBadge">✅ Hết giờ – vẫn có thể trả lời!</div>
+  </div>
+
+  <div class="agrid" id="agrid"></div>
+  <div class="feedback" id="feedback"></div>
+  <div class="action-row" id="actionRow">
+    <button class="btn btn-p" onclick="nextQ()">Câu tiếp theo →</button>
+  </div>
+</div>
+
+<!-- ===== RESULT ===== -->
+<div id="resultScreen" class="screen">
+  <span class="r-icon" id="rIcon"></span>
+  <div class="r-title" id="rTitle"></div>
+  <div class="r-sub" id="rSub"></div>
+  <div class="r-score" id="rScore"></div>
+  <div class="stars" id="rStars"></div>
+  <div class="r-grid">
+    <div class="r-card g"><div class="n" id="rCorrect">0</div><div class="l">✅ Đúng</div></div>
+    <div class="r-card r"><div class="n" id="rWrong">0</div><div class="l">❌ Sai</div></div>
+    <div class="r-card b"><div class="n" id="rTime">--</div><div class="l">⏱️ Thời gian</div></div>
+  </div>
+  <div class="r-actions">
+    <button class="btn btn-o" onclick="showReview()">🔍 Xem đáp án</button>
+    <button class="btn btn-w" onclick="startQuiz()">🔄 Làm lại</button>
+    <button class="btn btn-p" onclick="goHome()">🏠 Trang chủ</button>
+  </div>
+</div>
+
+<!-- ===== REVIEW ===== -->
+<div id="reviewScreen" class="screen">
+  <div class="rv-hdr">
+    <h3 style="font-size:17px;color:var(--dark)">🔍 Xem lại đáp án</h3>
+    <button class="btn btn-o" onclick="showScreen('resultScreen')">← Quay lại</button>
+  </div>
+  <div id="rvContent"></div>
+</div>
+
+<script>
+var Q = [
+  {q:"Câu 1: Điền vào chỗ trống: 'Cơ cấu xã hội là những cộng đồng người cùng toàn bộ những... do sự tác động lẫn nhau của các cộng đồng ấy tạo nên'",a:[{t:"A. mối liên hệ.",c:false},{t:"B. mối quan hệ cá nhân.",c:false},{t:"C. mối quan hệ xã hội.",c:true},{t:"D. mối quan hệ tự nhiên.",c:false}]},
+  {q:"Câu 2: Môn CNXH khoa học tập trung nghiên cứu cơ cấu xã hội - giai cấp vì",a:[{t:"A. đó là một trong những cơ sở để nghiên cứu vấn đề liên minh giai cấp, tầng lớp.",c:true},{t:"B. đó là cơ sở để giai cấp tư sản thống trị các giai cấp còn lại.",c:false},{t:"C. đó là cơ sở để giai cấp nông dân tiến hành đấu tranh lật đổ giai cấp tư sản.",c:false},{t:"D. Bao gồm tất cả các đáp án trên.",c:false}]},
+  {q:"Câu 3: Khái niệm nào chỉ hệ thống các giai cấp, tầng lớp xã hội tồn tại khách quan trong một chế độ xã hội nhất định?",a:[{t:"A. Cơ cấu xã hội - giai cấp.",c:true},{t:"B. Cơ cấu xã hội - dân cư.",c:false},{t:"C. Cơ cấu xã hội - dân tộc.",c:false},{t:"D. Cơ cấu xã hội - tôn giáo.",c:false}]},
+  {q:"Câu 4: Mối quan hệ nào đóng vai trò quyết định đến sự hình thành cơ cấu xã hội - giai cấp?",a:[{t:"A. Mối quan hệ về tổ chức quản lý quá trình sản xuất.",c:false},{t:"B. Mối quan hệ về sở hữu tư liệu sản xuất.",c:true},{t:"C. Mối quan hệ về địa vị chính trị - xã hội.",c:false},{t:"D. Mối quan hệ về phân phối.",c:false}]},
+  {q:"Câu 5: Cơ cấu xã hội - giai cấp của thời kỳ quá độ lên CNXH bao gồm những giai cấp, tầng lớp nào?",a:[{t:"A. Giai cấp công nhân, giai cấp nông dân, tầng lớp trí thức.",c:false},{t:"B. Tầng lớp doanh nhân, tầng lớp tiểu chủ.",c:false},{t:"C. Tầng lớp thanh niên, phụ nữ.",c:false},{t:"D. Bao gồm tất cả các đáp án trên.",c:true}]},
+  {q:"Câu 6: Cơ cấu xã hội - giai cấp trong thời kỳ quá độ lên CNXH đặt dưới sự lãnh đạo của tổ chức nào?",a:[{t:"A. Đảng dân chủ.",c:false},{t:"B. Đoàn thanh niên.",c:false},{t:"C. Đội tiền phong của giai cấp nông dân.",c:false},{t:"D. Đảng Cộng sản.",c:true}]},
+  {q:"Câu 7: Vì sao cơ cấu xã hội - giai cấp có vị trí quan trọng hàng đầu trong cơ cấu xã hội?",a:[{t:"A. Liên quan đến các đảng phái chính trị và nhà nước.",c:false},{t:"B. Liên quan đến quyền sở hữu tư liệu sản xuất.",c:false},{t:"C. Liên quan đến quản lý tổ chức lao động và phân phối thu nhập.",c:false},{t:"D. Bao gồm tất cả các đáp án trên.",c:true}]},
+  {q:"Câu 8: Sự biến đổi của cơ cấu xã hội - giai cấp tất yếu sẽ dẫn đến",a:[{t:"A. Chỉ ảnh hưởng đến cơ cấu dân cư.",c:false},{t:"B. Ảnh hưởng đến toàn bộ cơ cấu xã hội.",c:true},{t:"C. Không ảnh hưởng đến cơ cấu khác.",c:false},{t:"D. Chỉ ảnh hưởng đến cơ cấu kinh tế.",c:false}]},
+  {q:"Câu 9: Căn cứ cơ bản để xây dựng chính sách phát triển kinh tế, văn hóa, xã hội là",a:[{t:"A. cơ cấu xã hội tri thức.",c:false},{t:"B. cơ cấu xã hội tiểu tư sản.",c:false},{t:"C. cơ cấu xã hội - giai cấp.",c:true},{t:"D. Tất cả đều sai.",c:false}]},
+  {q:"Câu 10: Trong thời kỳ quá độ lên CNXH, cơ cấu xã hội - giai cấp biến đổi gắn liền và bị quy định bởi",a:[{t:"A. cơ cấu xã hội - giai cấp chủ nô.",c:false},{t:"B. cơ cấu xã hội - giai cấp nô lệ.",c:false},{t:"C. cơ cấu nền kinh tế tự cung tự cấp.",c:false},{t:"D. cơ cấu kinh tế.",c:true}]},
+  {q:"Câu 11: Với nước có xuất phát điểm thấp, khi bước vào thời kỳ quá độ lên CNXH, cơ cấu kinh tế biến đổi theo hướng nào?",a:[{t:"A. Tăng tỷ trọng công nghiệp và dịch vụ, giảm tỷ trọng nông nghiệp.",c:false},{t:"B. Hình thành các vùng, trung tâm kinh tế lớn.",c:false},{t:"C. Phát triển lực lượng sản xuất với trình độ công nghệ cao.",c:false},{t:"D. Bao gồm tất cả các đáp án trên.",c:true}]},
+  {q:"Câu 12: Sự biến đổi phức tạp, đa dạng của cơ cấu xã hội - giai cấp trong thời kỳ quá độ dẫn đến kết quả gì?",a:[{t:"A. Xuất hiện các tầng lớp xã hội mới.",c:true},{t:"B. Sự trở lại các giai cấp đã bị diệt vong.",c:false},{t:"C. Sự suy thoái của cơ chế kinh tế thị trường.",c:false},{t:"D. Bao gồm tất cả các đáp án trên.",c:false}]},
+  {q:"Câu 13: Sự biến đổi phức tạp của cơ cấu xã hội - giai cấp làm xuất hiện các tầng lớp xã hội mới là do",a:[{t:"A. kết cấu kinh tế nhiều thành phần.",c:true},{t:"B. kết cấu tôn giáo.",c:false},{t:"C. kết cấu dân tộc.",c:false},{t:"D. kết cấu kinh tế một thành phần.",c:false}]},
+  {q:"Câu 14: Quan hệ giữa các giai cấp, tầng lớp trong thời kỳ quá độ lên CNXH biến đổi như thế nào?",a:[{t:"A. Vừa đấu tranh, vừa liên minh, từng bước xóa bỏ bất bình đẳng xã hội.",c:true},{t:"B. Vừa liên minh, vừa tiêu diệt nhau.",c:false},{t:"C. Vừa liên minh, vừa tranh giành quyền lãnh đạo Đảng.",c:false},{t:"D. Tiêu diệt lẫn nhau vì lợi ích riêng.",c:false}]},
+  {q:"Câu 15: Xu hướng biến đổi của cơ cấu xã hội - giai cấp trong thời kỳ quá độ lên CNXH là",a:[{t:"A. xóa bỏ dần tình trạng bóc lột giai cấp, vươn tới những giá trị công bằng, bình đẳng.",c:true},{t:"B. xóa bỏ dần liên minh giai cấp, vươn tới giá trị bất bình đẳng.",c:false},{t:"C. xóa bỏ dần sự lãnh đạo của giai cấp công nhân.",c:false},{t:"D. xóa bỏ dần bóc lột, xây dựng xã hội do trí thức và nông dân nắm quyền.",c:false}]},
+  {q:"Câu 16: Theo C. Mác và Ph. Ăngghen, các cuộc đấu tranh của giai cấp công nhân thất bại chủ yếu là do",a:[{t:"A. không liên minh với giai cấp tư sản.",c:false},{t:"B. không tổ chức liên minh với giai cấp nông dân.",c:true},{t:"C. liên minh với giai cấp tư sản và tầng lớp trí thức.",c:false},{t:"D. liên minh với tư sản và tiểu tư sản.",c:false}]},
+  {q:"Câu 17: Trong cách mạng XHCN, để giành thắng lợi giai cấp công nhân phải liên minh với",a:[{t:"A. giai cấp nông dân và giai cấp tư sản.",c:false},{t:"B. giai cấp nông dân và các tầng lớp nhân dân lao động.",c:true},{t:"C. giai cấp tư sản và các tập đoàn doanh nghiệp lớn.",c:false},{t:"D. tầng lớp trí thức và các tổ chức chính trị của tư sản.",c:false}]},
+  {q:"Câu 18: Giai cấp công nhân liên minh với giai cấp nông dân và các tầng lớp nhân dân lao động nhằm",a:[{t:"A. tạo sức mạnh đảm bảo cho thắng lợi của cuộc cách mạng tư sản.",c:false},{t:"B. tạo sức mạnh đảm bảo cho thắng lợi của cuộc cách mạng xã hội chủ nghĩa.",c:true},{t:"C. tạo sức mạnh đảm bảo cho thắng lợi của cuộc cách mạng tư bản chủ nghĩa.",c:false},{t:"D. tạo sức mạnh đảm bảo cho thắng lợi của cách mạng địa chủ phong kiến.",c:false}]},
+  {q:"Câu 19: Theo V.I. Lênin, điều kiện để giai cấp vô sản giữ được vai trò lãnh đạo và chính quyền nhà nước là",a:[{t:"A. duy trì khối liên minh giữa vô sản và tư sản.",c:false},{t:"B. duy trì khối liên minh giữa vô sản và nông dân.",c:true},{t:"C. duy trì khối liên minh giữa vô sản và địa chủ phong kiến.",c:false},{t:"D. duy trì khối liên minh giữa tư sản và nông dân.",c:false}]},
+  {q:"Câu 20: Thực hiện tốt khối liên minh giai cấp, tầng lớp trong thời kỳ quá độ lên CNXH là cơ sở để",a:[{t:"A. củng cố chế độ chính trị phong kiến vững chắc.",c:false},{t:"B. củng cố chế độ chính trị xã hội chủ nghĩa vững chắc.",c:true},{t:"C. củng cố chế độ chính trị tư bản chủ nghĩa vững chắc.",c:false},{t:"D. củng cố chế độ chính trị quân chủ chuyên chế vững chắc.",c:false}]},
+  {q:"Câu 21: Liên minh giai cấp, tầng lớp trong thời kỳ quá độ lên CNXH được hình thành xuất phát từ yêu cầu khách quan nào?",a:[{t:"A. Quá trình đẩy mạnh công nghiệp hóa, hiện đại hóa và chuyển dịch cơ cấu kinh tế.",c:false},{t:"B. Phát triển công nghiệp, dịch vụ và khoa học - công nghệ.",c:false},{t:"C. Xây dựng nền tảng vật chất - kỹ thuật cần thiết cho CNXH.",c:false},{t:"D. Bao gồm tất cả các đáp án trên.",c:true}]},
+  {q:"Câu 22: Giai cấp, tầng lớp nào không thuộc cơ cấu xã hội - giai cấp của Việt Nam trong thời kỳ quá độ lên CNXH?",a:[{t:"A. Giai cấp công nhân.",c:false},{t:"B. Giai cấp nông dân.",c:false},{t:"C. Giai cấp địa chủ phong kiến.",c:true},{t:"D. Tầng lớp trí thức.",c:false}]},
+  {q:"Câu 23: Trong thời kỳ quá độ lên CNXH ở Việt Nam, giai cấp nào có vai trò lãnh đạo?",a:[{t:"A. Giai cấp nông dân.",c:false},{t:"B. Giai cấp tư sản.",c:false},{t:"C. Giai cấp công nhân.",c:true},{t:"D. Giai cấp địa chủ.",c:false}]},
+  {q:"Câu 24: Lực lượng đi đầu của quá trình phát triển kinh tế, tiến hành CNH-HĐH trong thời kỳ quá độ ở Việt Nam là",a:[{t:"A. giai cấp nông dân.",c:false},{t:"B. đội ngũ doanh nhân.",c:false},{t:"C. giai cấp công nhân.",c:true},{t:"D. đội ngũ trí thức.",c:false}]},
+  {q:"Câu 25: Giai cấp nào có vị trí chiến lược trong sự nghiệp CNH-HĐH nông nghiệp, nông thôn ở Việt Nam?",a:[{t:"A. Giai cấp công nhân.",c:false},{t:"B. Tầng lớp trí thức.",c:false},{t:"C. Giai cấp nông dân.",c:true},{t:"D. Đội ngũ doanh nhân.",c:false}]},
+  {q:"Câu 26: Giai cấp nào có xu hướng giảm dần về số lượng và tỷ lệ trong cơ cấu xã hội - giai cấp ở Việt Nam?",a:[{t:"A. Giai cấp công nhân.",c:false},{t:"B. Đội ngũ trí thức.",c:false},{t:"C. Đội ngũ doanh nhân.",c:false},{t:"D. Giai cấp nông dân.",c:true}]},
+  {q:"Câu 27: Giai cấp nông dân ở Việt Nam có xu hướng biến đổi như thế nào trong cơ cấu xã hội - giai cấp?",a:[{t:"A. Tăng dần về số lượng và tỷ lệ.",c:false},{t:"B. Giảm dần về số lượng và tăng dần về tỷ lệ.",c:false},{t:"C. Không giảm về số lượng và tỷ lệ.",c:false},{t:"D. Giảm dần về số lượng và tỷ lệ.",c:true}]},
+  {q:"Câu 28: Lực lượng lao động sáng tạo đặc biệt quan trọng trong tiến trình CNH-HĐH và xây dựng kinh tế tri thức ở Việt Nam là",a:[{t:"A. giai cấp công nhân.",c:false},{t:"B. giai cấp nông dân.",c:false},{t:"C. đội ngũ doanh nhân.",c:false},{t:"D. đội ngũ trí thức.",c:true}]},
+  {q:"Câu 29: Nội dung của liên minh giai cấp, tầng lớp trong thời kỳ quá độ lên CNXH ở Việt Nam gồm những nội dung cơ bản nào?",a:[{t:"A. Nội dung kinh tế.",c:false},{t:"B. Nội dung chính trị.",c:false},{t:"C. Nội dung văn hóa - xã hội.",c:false},{t:"D. Bao gồm tất cả các đáp án trên.",c:true}]},
+  {q:"Câu 30: Nội dung cơ bản quyết định nhất của liên minh giai cấp, tầng lớp trong thời kỳ quá độ lên CNXH ở Việt Nam là",a:[{t:"A. nội dung quốc phòng - an ninh.",c:false},{t:"B. nội dung chính trị.",c:false},{t:"C. nội dung văn hóa - xã hội.",c:false},{t:"D. nội dung kinh tế.",c:true}]},
+  {q:"Câu 31: Nội dung nào là cơ sở vật chất - kỹ thuật của liên minh giai cấp, tầng lớp trong thời kỳ quá độ lên CNXH ở Việt Nam?",a:[{t:"A. Nội dung kinh tế.",c:true},{t:"B. Nội dung chính trị.",c:false},{t:"C. Nội dung văn hóa - xã hội.",c:false},{t:"D. Bao gồm tất cả các đáp án trên.",c:false}]},
+  {q:"Câu 32: Sự hợp tác giữa giai cấp công nhân với nông dân và đội ngũ trí thức để xây dựng nền kinh tế mới XHCN hiện đại là nội dung cơ bản nào?",a:[{t:"A. Nội dung quốc phòng - an ninh.",c:false},{t:"B. Nội dung kinh tế.",c:true},{t:"C. Nội dung văn hóa - xã hội.",c:false},{t:"D. Nội dung chính trị.",c:false}]},
+  {q:"Câu 33: Nội dung kinh tế của liên minh giai cấp, tầng lớp trong thời kỳ quá độ lên CNXH ở Việt Nam là",a:[{t:"A. giữ vững lập trường chính trị - tư tưởng của giai cấp công nhân.",c:false},{t:"B. các giai cấp cùng xây dựng nền văn hóa Việt Nam tiên tiến, đậm đà bản sắc dân tộc.",c:false},{t:"C. sự hợp tác giữa công nhân với nông dân và trí thức để xây dựng nền kinh tế mới XHCN hiện đại.",c:true},{t:"D. Bao gồm tất cả các đáp án trên.",c:false}]},
+  {q:"Câu 34: Một trong những nội dung kinh tế của liên minh giai cấp trong thời kỳ quá độ lên CNXH ở Việt Nam là",a:[{t:"A. xây dựng Đảng trong sạch, vững mạnh.",c:false},{t:"B. sẵn sàng tham gia chiến đấu bảo vệ chế độ XHCN.",c:false},{t:"C. xây dựng nền văn hóa Việt Nam tiên tiến, đậm đà bản sắc dân tộc.",c:false},{t:"D. hoàn thiện thể chế, phát triển kinh tế thị trường định hướng XHCN.",c:true}]},
+  {q:"Câu 35: Giữ vững lập trường chính trị - tư tưởng của giai cấp công nhân và vai trò lãnh đạo của Đảng CSVN là nội dung cơ bản nào?",a:[{t:"A. Nội dung chính trị.",c:true},{t:"B. Nội dung quốc phòng - an ninh.",c:false},{t:"C. Nội dung kinh tế.",c:false},{t:"D. Nội dung văn hóa - xã hội.",c:false}]},
+  {q:"Câu 36: Nội dung chính trị của liên minh giai cấp thể hiện ở việc giữ vững lập trường chính trị - tư tưởng của giai cấp nào?",a:[{t:"A. Giai cấp nông dân.",c:false},{t:"B. Giai cấp công nhân.",c:true},{t:"C. Tầng lớp trí thức.",c:false},{t:"D. Đội ngũ doanh nhân.",c:false}]},
+  {q:"Câu 37: Một trong những nội dung chính trị của liên minh giai cấp trong thời kỳ quá độ lên CNXH ở Việt Nam là",a:[{t:"A. nâng cao năng suất, chất lượng, hiệu quả kinh tế.",c:false},{t:"B. chăm sóc sức khỏe và nâng cao chất lượng cuộc sống.",c:false},{t:"C. xây dựng Đảng trong sạch, vững mạnh.",c:true},{t:"D. Bao gồm tất cả các đáp án trên.",c:false}]},
+  {q:"Câu 38: Nội dung văn hóa - xã hội của liên minh giai cấp trong thời kỳ quá độ lên CNXH ở Việt Nam là",a:[{t:"A. các giai cấp cùng xây dựng nền văn hóa Việt Nam tiên tiến, đậm đà bản sắc dân tộc.",c:true},{t:"B. giữ vững lập trường chính trị - tư tưởng của giai cấp công nhân.",c:false},{t:"C. tăng cường hợp tác để xây dựng nền kinh tế mới.",c:false},{t:"D. Bao gồm tất cả các đáp án trên.",c:false}]},
+  {q:"Câu 39: Các giai cấp, tầng lớp cùng nhau xây dựng nền văn hóa Việt Nam tiên tiến, đậm đà bản sắc dân tộc là nội dung cơ bản nào?",a:[{t:"A. Nội dung văn hóa - xã hội.",c:true},{t:"B. Nội dung quốc phòng - an ninh.",c:false},{t:"C. Nội dung kinh tế.",c:false},{t:"D. Nội dung chính trị.",c:false}]},
+  {q:"Câu 40: Một trong những nội dung xã hội của liên minh giai cấp trong thời kỳ quá độ lên CNXH ở Việt Nam là",a:[{t:"A. xây dựng Đảng trong sạch, vững mạnh.",c:false},{t:"B. xóa đói giảm nghèo.",c:true},{t:"C. nâng cao năng suất, chất lượng, hiệu quả kinh tế.",c:false},{t:"D. sẵn sàng tham gia chiến đấu bảo vệ chế độ XHCN.",c:false}]},
+  {q:"Câu 41: Xu hướng biến đổi của giai cấp nông dân Việt Nam trong thời kỳ quá độ lên CNXH là gì?",a:[{t:"A. Chuyển sang sản xuất hàng hóa.",c:false},{t:"B. Trở thành giai cấp giữ vai trò lãnh đạo xã hội.",c:false},{t:"C. Chuyển dịch trở thành một bộ phận của giai cấp công nhân.",c:true},{t:"D. Trở thành giai cấp thống trị xã hội.",c:false}]},
+  {q:"Câu 42: Vì sao các giai cấp, tầng lớp trong thời kỳ quá độ vừa có đấu tranh vừa có liên minh?",a:[{t:"A. Vì nền kinh tế là kinh tế thị trường.",c:false},{t:"B. Vì trình độ văn hóa của các giai cấp có khác nhau.",c:false},{t:"C. Vì lợi ích của các giai cấp vừa có sự đối kháng, vừa có sự thống nhất.",c:true},{t:"D. Vì hệ tư tưởng của các giai cấp có mâu thuẫn với nhau.",c:false}]},
+  {q:"Câu 43: Đấu tranh giai cấp và liên minh giai cấp là (.....) của quan hệ giai cấp trong một chế độ xã hội nhất định.",a:[{t:"A. Hai mặt.",c:true},{t:"B. Hai giai đoạn.",c:false},{t:"C. Nguyên nhân.",c:false},{t:"D. Mục tiêu.",c:false}]},
+  {q:"Câu 44: Vị trí của cơ cấu xã hội - giai cấp trong hệ thống cơ cấu xã hội là gì?",a:[{t:"A. Có vị trí ngang hàng với các loại hình khác.",c:false},{t:"B. Hoàn toàn độc lập với các loại hình khác.",c:false},{t:"C. Giữ vị trí trung tâm trong cơ cấu xã hội.",c:true},{t:"D. Đối kháng với các loại hình khác.",c:false}]},
+  {q:"Câu 45: Những cộng đồng người cùng toàn bộ những mối quan hệ xã hội do sự tác động lẫn nhau của các cộng đồng ấy tạo nên là khái niệm nào?",a:[{t:"A. Cơ cấu xã hội.",c:true},{t:"B. Dân tộc.",c:false},{t:"C. Dân cư.",c:false},{t:"D. Cộng đồng.",c:false}]},
+  {q:"Câu 46: Nội dung nào KHÔNG phải là sự biến đổi có tính quy luật của cơ cấu xã hội - giai cấp trong thời kỳ quá độ lên CNXH?",a:[{t:"A. Biến đổi gắn liền và bị quy định bởi cơ cấu kinh tế.",c:false},{t:"B. Biến đổi phức tạp, đa dạng, làm xuất hiện các tầng lớp xã hội mới.",c:false},{t:"C. Biến đổi trong mối quan hệ vừa đấu tranh, vừa liên minh, dẫn đến sự xích lại gần nhau.",c:false},{t:"D. Biến đổi và chịu sự tác động của sự biến đổi dân số, tôn giáo.",c:true}]},
+  {q:"Câu 47: '...Cuộc đấu tranh giai cấp chưa chấm dứt dưới thời chuyên chính vô sản, nó chỉ diễn biến ra dưới những hình thức khác mà thôi' là câu nói của ai?",a:[{t:"A. C. Mác.",c:false},{t:"B. Ph. Ăngghen.",c:false},{t:"C. V.I. Lênin.",c:true},{t:"D. Hồ Chí Minh.",c:false}]},
+  {q:"Câu 48: Yếu tố nào quyết định sự liên minh giữa giai cấp công nhân, giai cấp nông dân và tầng lớp trí thức?",a:[{t:"A. Mong muốn của giai cấp công nhân.",c:false},{t:"B. Cùng một kẻ thù là giai cấp tư sản.",c:false},{t:"C. Có những lợi ích cơ bản thống nhất với nhau.",c:true},{t:"D. Mục tiêu về chính trị của giai cấp công nhân.",c:false}]},
+  {q:"Câu 49: Nội dung nào KHÔNG phải là vai trò của giai cấp công nhân trong thời kỳ quá độ lên CNXH ở Việt Nam?",a:[{t:"A. Là giai cấp lãnh đạo.",c:false},{t:"B. Là giai cấp đại diện cho phương thức sản xuất mới.",c:false},{t:"C. Là lực lượng lao động sáng tạo đặc biệt.",c:true},{t:"D. Là lực lượng nòng cốt trong khối liên minh giai cấp.",c:false}]},
+  {q:"Câu 50: Vấn đề liên minh công - nông - trí thức được Đảng ta khẳng định lần đầu tiên tại Đại hội nào?",a:[{t:"A. Đại hội đại biểu toàn quốc lần thứ II (1951).",c:false},{t:"B. Đại hội đại biểu toàn quốc lần thứ III (1960).",c:true},{t:"C. Đại hội đại biểu toàn quốc lần thứ IV (1976).",c:false},{t:"D. Đại hội đại biểu toàn quốc lần thứ V (1982).",c:false}]}
+];
+
+// ===== AUDIO: tạo âm thanh sai bằng Web Audio API =====
+function playWrong() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(200, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.35);
+  } catch(e) {}
+}
+
+// ===== STATE =====
+var mode = 'all';
+var ql = [], cur = 0, score = 0, okCount = 0, badCount = 0, streak = 0;
+var answered = false, ua = [];
+var tiElapsed = null, tiPerQ = null;
+var perQLeft = 10, st = null;
+var best = 0;
+try { best = parseInt(localStorage.getItem('cnxh_best') || '0') || 0; } catch(e) {}
+document.getElementById('bestDisp').textContent = best > 0 ? best : '--';
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('mode' + m.charAt(0).toUpperCase() + m.slice(1)).classList.add('active');
+}
+
+// ===== START QUIZ =====
+function startQuiz() {
+  // Thứ tự câu: mặc định 0..49, mode random thì xáo trộn
+  ql = [];
+  for (var i = 0; i < Q.length; i++) ql.push(i);
+  if (mode === 'random') {
+    ql.sort(function() { return Math.random() - 0.5; });
+    ql = ql.slice(0, 20);
+  }
+  cur = 0; score = 0; okCount = 0; badCount = 0; streak = 0;
+  answered = false; ua = []; st = Date.now();
+
+  clearInterval(tiElapsed);
+  document.getElementById('elapsedDisp').textContent = '00:00';
+  tiElapsed = setInterval(function() {
+    var e = Math.floor((Date.now() - st) / 1000);
+    var mm = Math.floor(e / 60), ss = e % 60;
+    document.getElementById('elapsedDisp').textContent = (mm < 10 ? '0' : '') + mm + ':' + (ss < 10 ? '0' : '') + ss;
+  }, 1000);
+
+  showScreen('quizScreen');
+  loadQ();
+}
+
+// ===== LOAD QUESTION =====
+function loadQ() {
+  answered = false;
+  clearInterval(tiPerQ);
+
+  // Reset UI
+  var fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  document.getElementById('actionRow').style.display = 'none';
+
+  // Reset timer row
+  var startBtn = document.getElementById('startTimerBtn');
+  startBtn.disabled = false;
+  startBtn.style.display = 'flex';
+  document.getElementById('timerBarWrap').style.display = 'none';
+  document.getElementById('timerDoneBadge').style.display = 'none';
+  document.getElementById('timerNum').textContent = '10s';
+  document.getElementById('timerNum').className = 'timer-info';
+  var fill = document.getElementById('timerBarFill');
+  fill.style.transition = 'none';
+  fill.style.width = '100%';
+  fill.className = 'timer-bar-fill';
+
+  // Header
+  var q = Q[ql[cur]];
+  document.getElementById('progFill').style.width = Math.round(cur / ql.length * 100) + '%';
+  document.getElementById('progText').textContent = 'Câu ' + (cur + 1) + '/' + ql.length;
+  document.getElementById('streakText').textContent = streak >= 3 ? ('🔥 Chuỗi ' + streak + '!') : '';
+  document.getElementById('scoreDisp').textContent = score;
+  document.getElementById('qText').textContent = q.q;
+
+  // Render đáp án theo thứ tự GỐC (không xáo trộn)
+  var g = document.getElementById('agrid');
+  g.innerHTML = '';
+  q.a.forEach(function(a) {
+    var btn = document.createElement('button');
+    btn.className = 'abtn';
+    btn.innerHTML = '<span class="albl">' + a.t.charAt(0) + '</span><span>' + a.t.replace(/^[A-D]\.\s*/, '') + '</span>';
+    (function(ans) {
+      btn.onclick = function() { pick(btn, ans.c, g); };
+    })(a);
+    g.appendChild(btn);
+  });
+}
+
+// ===== BẮT ĐẦU ĐẾM GIỜ =====
+function startTimer() {
+  var startBtn = document.getElementById('startTimerBtn');
+  startBtn.disabled = true;
+  startBtn.style.display = 'none';
+  document.getElementById('timerBarWrap').style.display = 'block';
+
+  perQLeft = 10;
+  document.getElementById('timerNum').textContent = '10s';
+  var fill = document.getElementById('timerBarFill');
+  fill.style.transition = 'none';
+  fill.style.width = '100%';
+  fill.className = 'timer-bar-fill';
+  setTimeout(function() { fill.style.transition = 'width 1s linear'; }, 30);
+
+  tiPerQ = setInterval(function() {
+    perQLeft--;
+    document.getElementById('timerNum').textContent = perQLeft + 's';
+    fill.style.width = Math.max(0, Math.round(perQLeft / 10 * 100)) + '%';
+    if (perQLeft <= 3) {
+      fill.className = 'timer-bar-fill red';
+      document.getElementById('timerNum').className = 'timer-info red';
+    }
+    if (perQLeft <= 0) {
+      clearInterval(tiPerQ);
+      // Hết giờ: hiện badge nhưng VẪN cho chọn
+      document.getElementById('timerBarWrap').style.display = 'none';
+      document.getElementById('timerDoneBadge').style.display = 'block';
+    }
+  }, 1000);
+}
+
+// ===== CHỌN ĐÁP ÁN =====
+function pick(btn, isOk, g) {
+  if (answered) return;
+
+  if (isOk) {
+    // ĐÚNG → kết thúc câu
+    answered = true;
+    clearInterval(tiPerQ);
+    document.getElementById('timerBarWrap').style.display = 'none';
+    document.getElementById('timerDoneBadge').style.display = 'none';
+    document.getElementById('startTimerBtn').style.display = 'none';
+
+    btn.classList.add('correct');
+    streak++;
+    score += (streak >= 3 ? 15 : 10);
+    okCount++;
+    var txt = btn.querySelector('span:last-child').textContent;
+    ua.push({ qi: ql[cur], chosen: txt, correct: true });
+
+    // Disable tất cả
+    g.querySelectorAll('.abtn').forEach(function(b) { b.disabled = true; });
+    document.getElementById('scoreDisp').textContent = score;
+
+    var fb = document.getElementById('feedback');
+    fb.textContent = streak >= 3 ? ('✅ Chính xác! 🔥 Chuỗi ' + streak + ' – +15 điểm!') : '✅ Chính xác!';
+    fb.className = 'feedback ok';
+    document.getElementById('actionRow').style.display = 'flex';
+
+  } else {
+    // SAI → phát âm, tô đỏ, cho chọn lại
+    playWrong();
+    btn.classList.add('wrong');
+    // Xóa class wrong sau 0.8s để có thể tô lại nếu chọn sai lần nữa
+    setTimeout(function() { btn.classList.remove('wrong'); }, 800);
+
+    var fb = document.getElementById('feedback');
+    fb.textContent = '❌ Sai rồi! Hãy chọn lại.';
+    fb.className = 'feedback bad';
+
+    // Ghi nhận lần sai (chỉ ghi 1 lần)
+    if (!btn._wrongLogged) {
+      btn._wrongLogged = true;
+      badCount++;
+      streak = 0;
+      var txt2 = btn.querySelector('span:last-child').textContent;
+      ua.push({ qi: ql[cur], chosen: txt2, correct: false });
+    }
+  }
+}
+
+// ===== NEXT =====
+function nextQ() {
+  cur++;
+  if (cur >= ql.length) endQuiz();
+  else loadQ();
+}
+
+// ===== END =====
+function endQuiz() {
+  clearInterval(tiPerQ);
+  clearInterval(tiElapsed);
+
+  var elapsed = Math.round((Date.now() - st) / 1000);
+  var m = Math.floor(elapsed / 60), s = elapsed % 60;
+  var ts = m > 0 ? (m + 'p ' + s + 's') : (s + 's');
+
+  if (score > best) {
+    best = score;
+    try { localStorage.setItem('cnxh_best', best); } catch(e) {}
+  }
+
+  var pct = Math.round(okCount / ql.length * 100);
+  var icon, title, sub;
+  if (pct >= 90)      { icon = '🏆'; title = 'Xuất sắc!';    sub = 'Bạn nắm vững kiến thức rất tốt!'; }
+  else if (pct >= 70) { icon = '🎉'; title = 'Tốt lắm!';     sub = 'Kết quả đáng khen ngợi!'; }
+  else if (pct >= 50) { icon = '😊'; title = 'Khá ổn!';      sub = 'Cố gắng hơn một chút nữa nhé!'; }
+  else                { icon = '📖'; title = 'Cần ôn thêm!'; sub = 'Hãy xem lại các câu sai và thử lại!'; }
+
+  document.getElementById('rIcon').textContent = icon;
+  document.getElementById('rTitle').textContent = title;
+  document.getElementById('rSub').textContent = sub;
+  document.getElementById('rScore').textContent = score + ' điểm';
+  document.getElementById('rStars').textContent = pct >= 90 ? '⭐⭐⭐' : pct >= 70 ? '⭐⭐' : '⭐';
+  document.getElementById('rCorrect').textContent = okCount;
+  document.getElementById('rWrong').textContent = badCount;
+  document.getElementById('rTime').textContent = ts;
+  showScreen('resultScreen');
+}
+
+// ===== REVIEW =====
+function showReview() {
+  var c = document.getElementById('rvContent');
+  c.innerHTML = '';
+  // Dùng câu hỏi theo thứ tự ql, chỉ lần đúng cuối
+  var seen = {};
+  ua.forEach(function(u) {
+    if (u.correct && !seen[u.qi]) seen[u.qi] = u;
+    else if (!seen[u.qi]) seen[u.qi] = u;
+  });
+  ql.forEach(function(qi) {
+    var u = seen[qi] || { qi: qi, correct: false, chosen: null };
+    var q = Q[qi];
+    var div = document.createElement('div');
+    div.className = 'rv-item ' + (u.correct ? 'ok2' : 'bad2');
+    var ah = q.a.map(function(a) {
+      var cls = 'ra';
+      var aText = a.t.replace(/^[A-D]\.\s*/, '');
+      if (a.c) cls += ' good';
+      else if (!a.c && aText === u.chosen) cls += ' miss';
+      var ic = a.c ? '✅' : (aText === u.chosen ? '❌' : '○');
+      return '<div class="' + cls + '">' + ic + ' ' + a.t + '</div>';
+    }).join('');
+    div.innerHTML = '<div class="rv-q">' + (u.correct ? '✅' : '❌') + ' ' + q.q + '</div><div class="rv-ans">' + ah + '</div>';
+    c.appendChild(div);
+  });
+  showScreen('reviewScreen');
+}
+
+function goHome() {
+  document.getElementById('bestDisp').textContent = best > 0 ? best : '--';
+  showScreen('startScreen');
+}
+
+function showScreen(id) {
+  ['startScreen', 'quizScreen', 'resultScreen', 'reviewScreen'].forEach(function(sid) {
+    var el = document.getElementById(sid);
+    if (sid === id) el.classList.add('active');
+    else el.classList.remove('active');
+  });
+}
+</script>
+</body>
+</html>
